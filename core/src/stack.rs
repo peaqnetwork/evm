@@ -18,6 +18,11 @@ impl Stack {
 		}
 	}
 
+	/// Stack data.
+	pub fn data(&self) -> &Vec<H256> {
+		&self.data
+	}
+
 	/// Stack limit.
 	pub fn limit(&self) -> usize {
 		self.limit

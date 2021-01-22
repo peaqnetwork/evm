@@ -36,6 +36,21 @@ pub struct StackSubstate<'config> {
 	depth: Option<usize>,
 }
 
+impl<'config> StackSubstate<'config> {
+	/// StackSubstate gasometer.
+	pub fn gasometer(&self) -> &Gasometer<'config> {
+		&self.gasometer
+	}
+	/// StackSubstate is_static.
+	pub fn is_static(&self) -> bool {
+		self.is_static
+	}
+	/// StackSubstate depth.
+	pub fn depth(&self) -> Option<usize> {
+		self.depth
+	}
+}
+
 /// Stack-based executor.
 pub struct StackExecutor<'backend, 'config, B> {
 	backend: &'backend B,
@@ -61,6 +76,20 @@ impl<'backend, 'config, B: Backend> StackExecutor<'backend, 'config, B> {
 		config: &'config Config,
 	) -> Self {
 		Self::new_with_precompile(backend, gas_limit, config, no_precompile)
+	}
+
+	/// StackExecutor config
+	pub fn config(
+		&self
+	) -> &'config Config {
+		self.config
+	}
+
+	/// StackExecutor substates
+	pub fn substates(
+		&self
+	) -> &Vec<StackSubstate<'config>> {
+		&self.substates
 	}
 
 	/// Create a new stack-based executor with given precompiles.
