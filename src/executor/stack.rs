@@ -21,12 +21,17 @@ pub struct StackAccount {
 	pub reset_storage: bool,
 }
 
+/// The kind of exit for the executor.
 pub enum StackExitKind {
+	/// Succeeded
 	Succeeded,
+	/// Reverted
 	Reverted,
+	/// Failed
 	Failed,
 }
 
+/// StackSubstate gasometer.
 pub struct StackSubstate<'config> {
 	gasometer: Gasometer<'config>,
 	state: BTreeMap<H160, StackAccount>,
@@ -83,6 +88,13 @@ impl<'backend, 'config, B: Backend> StackExecutor<'backend, 'config, B> {
 		&self
 	) -> &'config Config {
 		self.config
+	}
+
+	/// StackExecutor backend
+	pub fn backend(
+		&self
+	) -> &'backend B {
+		self.backend
 	}
 
 	/// StackExecutor substates
@@ -439,8 +451,8 @@ impl<'backend, 'config, B: Backend> StackExecutor<'backend, 'config, B> {
 			},
 		}
 	}
-
-	fn create_inner(
+	/// The executor create routine.
+	pub fn create_inner(
 		&mut self,
 		caller: H160,
 		scheme: CreateScheme,
@@ -620,7 +632,8 @@ impl<'backend, 'config, B: Backend> StackExecutor<'backend, 'config, B> {
 		}
 	}
 
-	fn call_inner(
+	/// The executor call routine.
+	pub fn call_inner(
 		&mut self,
 		code_address: H160,
 		transfer: Option<Transfer>,
