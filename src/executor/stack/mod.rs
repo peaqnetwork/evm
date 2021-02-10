@@ -17,9 +17,9 @@ pub enum StackExitKind {
 }
 
 pub struct StackSubstateMetadata<'config> {
-	gasometer: Gasometer<'config>,
-	is_static: bool,
-	depth: Option<usize>,
+	pub gasometer: Gasometer<'config>,
+	pub is_static: bool,
+	pub depth: Option<usize>,
 }
 
 impl<'config> StackSubstateMetadata<'config> {
@@ -86,6 +86,13 @@ impl<'config, S: StackState<'config>> StackExecutor<'config, S> {
 		config: &'config Config,
 	) -> Self {
 		Self::new_with_precompile(state, config, no_precompile)
+	}
+
+	/// StackExecutor config
+	pub fn config(
+		&self
+	) -> &'config Config {
+		self.config
 	}
 
 	/// Create a new stack-based executor with given precompiles.

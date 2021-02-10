@@ -533,7 +533,7 @@ pub fn dynamic_opcode_cost<H: Handler>(
 
 /// Inner gasometer data.
 #[derive(Clone)]
-struct Inner<'config> {
+pub struct Inner<'config> {
 	memory_gas: u64,
 	used_gas: u64,
 	refunded_gas: i64,
