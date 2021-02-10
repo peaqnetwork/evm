@@ -1,7 +1,6 @@
 use alloc::vec::Vec;
 use alloc::collections::BTreeMap;
 use primitive_types::{H160, H256, U256};
-use sha3::{Digest, Keccak256};
 use super::{Basic, Backend, ApplyBackend, Apply, Log};
 
 /// Vivinity value of a memory backend.
@@ -99,16 +98,6 @@ impl<'vicinity> Backend for MemoryBackend<'vicinity> {
 		}).unwrap_or_default()
 	}
 
-	fn code_hash(&self, address: H160) -> H256 {
-		self.state.get(&address).map(|v| {
-			H256::from_slice(Keccak256::digest(&v.code).as_slice())
-		}).unwrap_or(H256::from_slice(Keccak256::digest(&[]).as_slice()))
-	}
-
-	fn code_size(&self, address: H160) -> usize {
-		self.state.get(&address).map(|v| v.code.len()).unwrap_or(0)
-	}
-
 	fn code(&self, address: H160) -> Vec<u8> {
 		self.state.get(&address).map(|v| v.code.clone()).unwrap_or_default()
 	}
@@ -117,6 +106,10 @@ impl<'vicinity> Backend for MemoryBackend<'vicinity> {
 		self.state.get(&address)
 			.map(|v| v.storage.get(&index).cloned().unwrap_or(H256::default()))
 			.unwrap_or(H256::default())
+	}
+
+	fn original_storage(&self, address: H160, index: H256) -> Option<H256> {
+		Some(self.storage(address, index))
 	}
 }
 

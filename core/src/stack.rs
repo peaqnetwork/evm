@@ -23,22 +23,26 @@ impl Stack {
 		&self.data
 	}
 
+	#[inline]
 	/// Stack limit.
 	pub fn limit(&self) -> usize {
 		self.limit
 	}
 
+	#[inline]
 	/// Stack length.
 	pub fn len(&self) -> usize {
 		self.data.len()
 	}
 
+	#[inline]
 	/// Pop a value from the stack. If the stack is already empty, returns the
 	/// `StackUnderflow` error.
 	pub fn pop(&mut self) -> Result<H256, ExitError> {
 		self.data.pop().ok_or(ExitError::StackUnderflow)
 	}
 
+	#[inline]
 	/// Push a new value into the stack. If it will exceed the stack limit,
 	/// returns `StackOverflow` error and leaves the stack unchanged.
 	pub fn push(&mut self, value: H256) -> Result<(), ExitError> {
@@ -49,6 +53,7 @@ impl Stack {
 		Ok(())
 	}
 
+	#[inline]
 	/// Peek a value at given index for the stack, where the top of
 	/// the stack is at index `0`. If the index is too large,
 	/// `StackError::Underflow` is returned.
@@ -60,6 +65,7 @@ impl Stack {
 		}
 	}
 
+	#[inline]
 	/// Set a value at given index for the stack, where the top of the
 	/// stack is at index `0`. If the index is too large,
 	/// `StackError::Underflow` is returned.
