@@ -63,11 +63,17 @@ impl<'config> StackSubstateMetadata<'config> {
 	}
 }
 
+/// Allows to hook into the step by step execution of the runtime.
+pub trait Hook<'config, S, H> {
+	fn step(&mut self, executor: &StackExecutor<'config, S, H>, runtime: &Runtime);
+}
+
 /// Stack-based executor.
-pub struct StackExecutor<'config, S> {
+pub struct StackExecutor<'config, S, H> {
 	config: &'config Config,
 	precompile: fn(H160, &[u8], Option<u64>, &Context) -> Option<Result<(ExitSucceed, Vec<u8>, u64), ExitError>>,
 	state: S,
+	hook: Option<H>,
 }
 
 fn no_precompile(
@@ -79,7 +85,7 @@ fn no_precompile(
 	None
 }
 
-impl<'config, S: StackState<'config>> StackExecutor<'config, S> {
+impl<'config, S: StackState<'config>, H: Hook<'config, S, H>> StackExecutor<'config, S, H> {
 	/// Create a new stack-based executor.
 	pub fn new(
 		state: S,
@@ -105,6 +111,7 @@ impl<'config, S: StackState<'config>> StackExecutor<'config, S> {
 			config,
 			precompile,
 			state,
+			hook: None,
 		}
 	}
 
@@ -141,12 +148,33 @@ impl<'config, S: StackState<'config>> StackExecutor<'config, S> {
 		}
 	}
 
+	pub fn change_hook(&mut self, mut hook: Option<H>) -> Option<H> {
+		std::mem::swap(&mut self.hook, &mut hook);
+		hook
+	}
+
 	/// Execute the runtime until it returns.
 	pub fn execute(&mut self, runtime: &mut Runtime) -> ExitReason {
-		match runtime.run(self) {
-			Capture::Exit(s) => s,
-			Capture::Trap(_) => unreachable!("Trap is Infallible"),
-		}
+		if let Some(mut hook) = self.hook.take() {
+			let ret = loop {
+				hook.step(self, runtime);
+
+				match runtime.step(self) {
+					Ok(()) => {},
+					Err(Capture::Exit(s)) => break s,
+					Err(Capture::Trap(_)) => unreachable!("Trap is Infallible"),
+				}
+			};
+
+			self.hook = Some(hook);
+
+			ret
+		} else {
+			match runtime.run(self) {
+				Capture::Exit(s) => s,
+				Capture::Trap(_) => unreachable!("Trap is Infallible"),
+			}
+		}		
 	}
 
 	/// Get remaining gas.
@@ -553,7 +581,7 @@ impl<'config, S: StackState<'config>> StackExecutor<'config, S> {
 	}
 }
 
-impl<'config, S: StackState<'config>> Handler for StackExecutor<'config, S> {
+impl<'config, S: StackState<'config>, H: Hook<'config, S, H>> Handler for StackExecutor<'config, S, H> {
 	type CreateInterrupt = Infallible;
 	type CreateFeedback = Infallible;
 	type CallInterrupt = Infallible;
