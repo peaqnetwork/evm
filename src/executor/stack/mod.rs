@@ -64,8 +64,8 @@ impl<'config> StackSubstateMetadata<'config> {
 }
 
 /// Allows to hook into the step by step execution of the runtime.
-pub trait Hook<'config, S, H> {
-	fn step(&mut self, executor: &StackExecutor<'config, S, H>, runtime: &Runtime);
+pub trait Hook<E> {
+	fn step(&mut self, executor: &E, runtime: &Runtime);
 }
 
 /// Stack-based executor.
@@ -85,7 +85,7 @@ fn no_precompile(
 	None
 }
 
-impl<'config, S: StackState<'config>, H: Hook<'config, S, H>> StackExecutor<'config, S, H> {
+impl<'config, S: StackState<'config>, H: Hook<Self>> StackExecutor<'config, S, H> {
 	/// Create a new stack-based executor.
 	pub fn new(
 		state: S,
@@ -581,7 +581,7 @@ impl<'config, S: StackState<'config>, H: Hook<'config, S, H>> StackExecutor<'con
 	}
 }
 
-impl<'config, S: StackState<'config>, H: Hook<'config, S, H>> Handler for StackExecutor<'config, S, H> {
+impl<'config, S: StackState<'config>, H: Hook<Self>> Handler for StackExecutor<'config, S, H> {
 	type CreateInterrupt = Infallible;
 	type CreateFeedback = Infallible;
 	type CallInterrupt = Infallible;
