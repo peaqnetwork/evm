@@ -66,6 +66,10 @@ impl<'config> StackSubstateMetadata<'config> {
 		&self.gasometer
 	}
 
+	pub fn gasometer_mut(&mut self) -> &mut Gasometer<'config> {
+		&mut self.gasometer
+	}
+
 	pub fn is_static(&self) -> bool {
 		self.is_static
 	}
