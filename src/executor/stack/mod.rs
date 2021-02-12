@@ -17,9 +17,9 @@ pub enum StackExitKind {
 }
 
 pub struct StackSubstateMetadata<'config> {
-	pub gasometer: Gasometer<'config>,
-	pub is_static: bool,
-	pub depth: Option<usize>,
+	gasometer: Gasometer<'config>,
+	is_static: bool,
+	depth: Option<usize>,
 }
 
 impl<'config> StackSubstateMetadata<'config> {
@@ -60,6 +60,18 @@ impl<'config> StackSubstateMetadata<'config> {
 				Some(n) => Some(n + 1),
 			},
 		}
+	}
+
+	pub fn gasometer(&self) -> &Gasometer<'config> {
+		&self.gasometer
+	}
+
+	pub fn is_static(&self) -> bool {
+		self.is_static
+	}
+
+	pub fn depth(&self) -> Option<usize> {
+		self.depth
 	}
 }
 

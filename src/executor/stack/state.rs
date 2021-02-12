@@ -370,7 +370,7 @@ pub trait StackState<'config>: Backend {
 
 pub struct MemoryStackState<'backend, 'config, B> {
 	backend: &'backend B,
-	substate: MemoryStackSubstate<'config>,
+	pub substate: MemoryStackSubstate<'config>,
 }
 
 impl<'backend, 'config, B: Backend> Backend for MemoryStackState<'backend, 'config, B> {
