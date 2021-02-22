@@ -83,25 +83,26 @@ impl<'config> StackSubstateMetadata<'config> {
 /// step.
 pub trait Hook {
 	/// Called before the execution of a context.
-    fn before_loop<'config, S: StackState<'config>, H>(
+    fn before_loop<'config, S: StackState<'config>, H: Hook>(
         &mut self,
         executor: &StackExecutor<'config, S, H>,
         runtime: &Runtime,
     );
 	/// Called before each step.
-    fn before_step<'config, S: StackState<'config>, H>(
+    fn before_step<'config, S: StackState<'config>, H: Hook>(
         &mut self,
         executor: &StackExecutor<'config, S, H>,
         runtime: &Runtime,
     );
-	/// Called after each step.
-    fn after_step<'config, S: StackState<'config>, H>(
+	/// Called after each step. Will not be called if runtime exited
+    /// from the loop.
+    fn after_step<'config, S: StackState<'config>, H: Hook>(
         &mut self,
         executor: &StackExecutor<'config, S, H>,
         runtime: &Runtime,
     );
 	/// Called after the execution of a context.
-    fn after_loop<'config, S: StackState<'config>, H>(
+    fn after_loop<'config, S: StackState<'config>, H: Hook>(
         &mut self,
         executor: &StackExecutor<'config, S, H>,
         runtime: &Runtime,
