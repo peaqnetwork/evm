@@ -189,7 +189,7 @@ impl<'config, S: StackState<'config>, H: Hook> StackExecutor<'config, S, H> {
 
     /// Set the hook used by the executor. Returns the previous one if any.
     pub fn set_hook(&mut self, mut hook: Option<H>) -> Option<H> {
-        std::mem::swap(&mut self.hook, &mut hook);
+        core::mem::swap(&mut self.hook, &mut hook);
         hook
     }
 
