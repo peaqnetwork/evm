@@ -5,14 +5,14 @@ use once_cell::unsync::OnceCell;
 
 environmental::environmental!(listener: dyn EventListener + 'static);
 struct LocalKey {
-    pub inner: OnceCell<bool>,
+	pub inner: OnceCell<bool>,
 }
 // Just copy environmental in
 // https://github.com/paritytech/environmental/blob/master/src/local_key.rs#L26
 // This is safe as long there is no threads in wasm32.
 unsafe impl ::core::marker::Sync for LocalKey {}
 static IS_ACTIVE: LocalKey = LocalKey {
-    inner: OnceCell::new(),
+	inner: OnceCell::new(),
 };
 
 pub trait EventListener {
@@ -60,16 +60,16 @@ impl Event {
 /// Cache and return whether or not we are in an environmental `using` call.
 #[inline]
 pub fn is_environmental() -> bool {
-    if let Some(active) = IS_ACTIVE.inner.get() {
-        *active
-    } else if let Some(_) = listener::with(|_listener| ())  {
-        // `with` returns whether there is `Some` environmental context for the Event or `None`.
-        IS_ACTIVE.inner.set(true).unwrap();
-        true
-    } else {
-        IS_ACTIVE.inner.set(false).unwrap();
-        false
-    }
+	if let Some(active) = IS_ACTIVE.inner.get() {
+		*active
+	} else if let Some(_) = listener::with(|_listener| ()) {
+		// `with` returns whether there is `Some` environmental context for the Event or `None`.
+		IS_ACTIVE.inner.set(true).unwrap();
+		true
+	} else {
+		IS_ACTIVE.inner.set(false).unwrap();
+		false
+	}
 }
 
 /// Run closure with provided listener.

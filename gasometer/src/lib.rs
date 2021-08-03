@@ -3,7 +3,6 @@
 #![deny(warnings)]
 #![forbid(unused_variables)]
 #![cfg_attr(not(feature = "tracing"), forbid(unsafe_code))]
-
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(feature = "tracing")]
