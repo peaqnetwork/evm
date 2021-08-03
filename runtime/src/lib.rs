@@ -1,7 +1,9 @@
 //! Runtime layer for EVM.
 
 #![deny(warnings)]
-#![forbid(unsafe_code, unused_variables)]
+#![forbid(unused_variables)]
+#![cfg_attr(not(feature = "tracing"), forbid(unsafe_code))]
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 extern crate alloc;
@@ -12,8 +14,10 @@ pub mod tracing;
 #[cfg(feature = "tracing")]
 macro_rules! event {
 	($x:expr) => {
-		use crate::tracing::Event::*;
-		$x.emit();
+		if crate::tracing::is_environmental() {
+			use crate::tracing::Event::*;
+			$x.emit();
+		}
 	};
 }
 
@@ -65,7 +69,6 @@ macro_rules! step {
 		}
 
 		let result = $self.machine.step();
-
 		event!(StepResult {
 			result: &result,
 			return_value: &$self.machine.return_value(),

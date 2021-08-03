@@ -13,6 +13,7 @@ primitive-types = { version = "0.9", default-features = false }
 evm-core = { version = "0.28", path = "../core", default-features = false }
 evm-runtime = { version = "0.28", path = "../runtime", default-features = false }
 environmental = { version = "1.1.2", default-features = false, optional = true }
+once_cell = { version = "1.8.0", default-features = false, optional = true}
 
 [features]
 default = ["std"]
@@ -20,8 +21,10 @@ std = [
   "evm-core/std",
   "evm-runtime/std",
   "primitive-types/std",
-  "environmental/std"
+  "environmental/std",
+  "once_cell/std"
 ]
 tracing = [
-  "environmental"
+  "environmental",
+  "once_cell"
 ]
