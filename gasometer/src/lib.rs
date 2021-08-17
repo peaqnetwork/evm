@@ -12,7 +12,9 @@ pub mod tracing;
 macro_rules! event {
 	($x:expr) => {
 		use crate::tracing::Event::*;
-		$x.emit();
+		if crate::tracing::is_tracing_enabled() {
+			$x.emit();
+		}
 	}
 }
 
