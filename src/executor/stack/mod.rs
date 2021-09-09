@@ -11,6 +11,30 @@ use crate::{ExitError, Stack, Opcode, Capture, Handler, Transfer,
 use ethereum::Log;
 use crate::gasometer::{self, Gasometer};
 
+macro_rules! emit_exit {
+	($reason:expr) => {
+		{
+			let reason = $reason;
+			event!(Exit {
+				reason: &reason,
+				return_value: &Vec::new(),
+			});
+			reason
+		}
+	};
+	($reason:expr, $return_value:expr) => {
+		{
+			let reason = $reason;
+			let return_value = $return_value;
+			event!(Exit {
+				reason: &reason,
+				return_value: &return_value,
+			});
+			(reason, return_value)
+		}
+	};
+}
+
 pub enum StackExitKind {
 	Succeeded,
 	Reverted,
@@ -187,10 +211,18 @@ impl<'config, S: StackState<'config>> StackExecutor<'config, S> {
 		init_code: Vec<u8>,
 		gas_limit: u64,
 	) -> ExitReason {
+		event!(TransactCreate {
+			caller,
+			value,
+			init_code: &init_code,
+			gas_limit,
+			address: self.create_address(CreateScheme::Legacy { caller }),
+		});
+
 		let transaction_cost = gasometer::create_transaction_cost(&init_code);
 		match self.state.metadata_mut().gasometer.record_transaction(transaction_cost) {
 			Ok(()) => (),
-			Err(e) => return e.into(),
+			Err(e) => return emit_exit!(e.into()),
 		}
 
 		match self.create_inner(
@@ -201,7 +233,7 @@ impl<'config, S: StackState<'config>> StackExecutor<'config, S> {
 			Some(gas_limit),
 			false,
 		) {
-			Capture::Exit((s, _, _)) => s,
+			Capture::Exit((s, _, _)) => emit_exit!(s),
 			Capture::Trap(_) => unreachable!(),
 		}
 	}
@@ -215,10 +247,25 @@ impl<'config, S: StackState<'config>> StackExecutor<'config, S> {
 		salt: H256,
 		gas_limit: u64,
 	) -> ExitReason {
+		event!(
+			TransactCreate2 {
+				caller,
+				value,
+				init_code: &init_code,
+				salt,
+				gas_limit,
+				address: self.create_address(CreateScheme::Create2 {
+					caller,
+					code_hash: H256::from_slice(Keccak256::digest(&init_code).as_slice()),
+					salt,
+				}),
+			}
+		);
+
 		let transaction_cost = gasometer::create_transaction_cost(&init_code);
 		match self.state.metadata_mut().gasometer.record_transaction(transaction_cost) {
 			Ok(()) => (),
-			Err(e) => return e.into(),
+			Err(e) => return emit_exit!(e.into()),
 		}
 		let code_hash = H256::from_slice(Keccak256::digest(&init_code).as_slice());
 
@@ -230,7 +277,7 @@ impl<'config, S: StackState<'config>> StackExecutor<'config, S> {
 			Some(gas_limit),
 			false,
 		) {
-			Capture::Exit((s, _, _)) => s,
+			Capture::Exit((s, _, _)) => emit_exit!(s),
 			Capture::Trap(_) => unreachable!(),
 		}
 	}
@@ -244,10 +291,18 @@ impl<'config, S: StackState<'config>> StackExecutor<'config, S> {
 		data: Vec<u8>,
 		gas_limit: u64,
 	) -> (ExitReason, Vec<u8>) {
+		event!(TransactCall {
+			caller,
+			address,
+			value,
+			data: &data,
+			gas_limit,
+		});
+
 		let transaction_cost = gasometer::call_transaction_cost(&data);
 		match self.state.metadata_mut().gasometer.record_transaction(transaction_cost) {
 			Ok(()) => (),
-			Err(e) => return (e.into(), Vec::new()),
+			Err(e) => return emit_exit!(e.into(), Vec::new()),
 		}
 
 		self.state.inc_nonce(caller);
@@ -263,7 +318,7 @@ impl<'config, S: StackState<'config>> StackExecutor<'config, S> {
 			target: address,
 			value
 		}), data, Some(gas_limit), false, false, false, context) {
-			Capture::Exit((s, v)) => (s, v),
+			Capture::Exit((s, v)) => emit_exit!(s, v),
 			Capture::Trap(_) => unreachable!(),
 		}
 	}
@@ -696,6 +751,7 @@ impl<'config, S: StackState<'config>> Handler for StackExecutor<'config, S> {
 		Ok(())
 	}
 
+	#[cfg(not(feature = "tracing"))]
 	fn create(
 		&mut self,
 		caller: H160,
@@ -707,6 +763,25 @@ impl<'config, S: StackState<'config>> Handler for StackExecutor<'config, S> {
 		self.create_inner(caller, scheme, value, init_code, target_gas, true)
 	}
 
+	#[cfg(feature = "tracing")]
+	fn create(
+		&mut self,
+		caller: H160,
+		scheme: CreateScheme,
+		value: U256,
+		init_code: Vec<u8>,
+		target_gas: Option<u64>,
+	) -> Capture<(ExitReason, Option<H160>, Vec<u8>), Self::CreateInterrupt> {
+		let capture = self.create_inner(caller, scheme, value, init_code, target_gas, true);
+
+		if let Capture::Exit((ref reason, _, ref return_value)) = capture {
+			emit_exit!(reason, return_value);
+		}
+
+		capture
+	}
+
+	#[cfg(not(feature = "tracing"))]
 	fn call(
 		&mut self,
 		code_address: H160,
@@ -717,6 +792,25 @@ impl<'config, S: StackState<'config>> Handler for StackExecutor<'config, S> {
 		context: Context,
 	) -> Capture<(ExitReason, Vec<u8>), Self::CallInterrupt> {
 		self.call_inner(code_address, transfer, input, target_gas, is_static, true, true, context)
+	}
+
+	#[cfg(feature = "tracing")]
+	fn call(
+		&mut self,
+		code_address: H160,
+		transfer: Option<Transfer>,
+		input: Vec<u8>,
+		target_gas: Option<u64>,
+		is_static: bool,
+		context: Context,
+	) -> Capture<(ExitReason, Vec<u8>), Self::CallInterrupt> {
+		let capture = self.call_inner(code_address, transfer, input, target_gas, is_static, true, true, context);
+
+		if let Capture::Exit((ref reason, ref return_value)) = capture {
+			emit_exit!(reason, return_value);
+		}
+
+		capture
 	}
 
 	#[inline]

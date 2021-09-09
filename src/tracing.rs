@@ -1,8 +1,8 @@
 //! Allows to listen to runtime events.
 
 use crate::Context;
-use evm_runtime::{CreateScheme, Transfer};
-use primitive_types::{H160, U256};
+use evm_runtime::{CreateScheme, Transfer, ExitReason};
+use primitive_types::{H160, H256, U256};
 
 environmental::environmental!(listener: dyn EventListener + 'static);
 
@@ -36,6 +36,32 @@ pub enum Event<'a> {
 		target: H160,
         balance: U256,
     },
+	Exit {
+		reason: &'a ExitReason,
+		return_value: &'a [u8],
+	},
+	TransactCall {
+		caller: H160,
+		address: H160,
+		value: U256,
+		data: &'a [u8],
+		gas_limit: u64,
+	},
+	TransactCreate {
+		caller: H160,
+		value: U256,
+		init_code: &'a [u8],
+		gas_limit: u64,
+		address: H160,
+	},
+	TransactCreate2 {
+		caller: H160,
+		value: U256,
+		init_code: &'a [u8],
+		salt: H256,
+		gas_limit: u64,
+		address: H160,
+	}
 }
 
 impl<'a> Event<'a> {
