@@ -42,7 +42,7 @@ macro_rules! try_or_fail {
 	};
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Default)]
 pub struct Snapshot {
 	pub gas_limit: u64,
 	pub memory_gas: u64,
@@ -131,7 +131,7 @@ impl<'config> Gasometer<'config> {
 	pub fn record_cost(&mut self, cost: u64) -> Result<(), ExitError> {
 		event!(RecordCost {
 			cost,
-			snapshot: self.snapshot()?,
+			snapshot: self.snapshot().unwrap_or_default(),
 		});
 
 		let all_gas_cost = self.total_used_gas() + cost;
@@ -149,7 +149,7 @@ impl<'config> Gasometer<'config> {
 	pub fn record_refund(&mut self, refund: i64) -> Result<(), ExitError> {
 		event!(RecordRefund {
 			refund,
-			snapshot: self.snapshot()?,
+			snapshot: self.snapshot().unwrap_or_default(),
 		});
 
 		self.inner_mut()?.refunded_gas += refund;
@@ -183,7 +183,7 @@ impl<'config> Gasometer<'config> {
 			gas_cost,
 			memory_gas,
 			gas_refund,
-			snapshot: self.snapshot()?,
+			snapshot: self.snapshot().unwrap_or_default(),
 		});
 
 		let all_gas_cost = memory_gas + used_gas + gas_cost;
@@ -207,7 +207,7 @@ impl<'config> Gasometer<'config> {
 	pub fn record_stipend(&mut self, stipend: u64) -> Result<(), ExitError> {
 		event!(RecordStipend {
 			stipend,
-			snapshot: self.snapshot()?,
+			snapshot: self.snapshot().unwrap_or_default(),
 		});
 
 		self.inner_mut()?.used_gas -= stipend;
@@ -237,7 +237,7 @@ impl<'config> Gasometer<'config> {
 
 		event!(RecordTransaction {
 			cost: gas_cost,
-			snapshot: self.snapshot()?,
+			snapshot: self.snapshot().unwrap_or_default(),
 		});
 
 		if self.gas() < gas_cost {
