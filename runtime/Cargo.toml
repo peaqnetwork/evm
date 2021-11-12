@@ -21,3 +21,4 @@ std = ["evm-core/std", "primitive-types/std", "sha3/std", "environmental/std"]
 tracing = [
   "environmental"
 ]
+tracing-step = [ "tracing" ]
