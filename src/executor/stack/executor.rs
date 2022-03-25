@@ -222,8 +222,9 @@ pub enum PrecompileOutput {
 		output: Vec<u8>,
 		logs: Vec<Log>,
 	},
-	/// Execute a set of EVM code in the context of the precompile.
+	/// Execute EVM bytecode in returned context.
 	Execute {
+		context: Context,
 		code: Vec<u8>,
 		input: Vec<u8>,
 		cost: u64,
@@ -864,7 +865,7 @@ impl<'config, 'precompiles, S: StackState<'config>, P: PrecompileSet>
 			}
 		}
 
-		let (code, input) = if let Some(result) =
+		let (context, code, input) = if let Some(result) =
 			self.precompile_set
 				.execute(code_address, &input, Some(gas_limit), &context, is_static)
 		{
@@ -894,12 +895,13 @@ impl<'config, 'precompiles, S: StackState<'config>, P: PrecompileSet>
 					return Capture::Exit((ExitReason::Succeed(exit_status), output));
 				}
 				Ok(PrecompileOutput::Execute {
+					context: precompile_context,
 					input: precompile_input,
 					code: precompile_code,
 					cost,
 				}) => {
 					let _ = self.state.metadata_mut().gasometer.record_cost(cost);
-					(precompile_code, precompile_input)
+					(precompile_context, precompile_code, precompile_input)
 				}
 				Err(PrecompileFailure::Error { exit_status }) => {
 					let _ = self.exit_substate(StackExitKind::Failed);
@@ -921,7 +923,7 @@ impl<'config, 'precompiles, S: StackState<'config>, P: PrecompileSet>
 				}
 			}
 		} else {
-			(code, input)
+			(context, code, input)
 		};
 
 		let mut runtime = Runtime::new(Rc::new(code), Rc::new(input), context, self.config);
