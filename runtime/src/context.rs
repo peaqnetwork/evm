@@ -35,7 +35,7 @@ pub enum CallScheme {
 }
 
 /// Context of the runtime.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Context {
 	/// Execution address.
 	pub address: H160,
