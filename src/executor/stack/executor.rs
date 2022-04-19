@@ -547,7 +547,7 @@ impl<'config, 'precompiles, S: StackState<'config>, P: PrecompileSet>
 		event!(TransactCall {
 			caller,
 			address,
-			value,
+			value: context.apparent_value,
 			data: &data,
 			gas_limit,
 		});
